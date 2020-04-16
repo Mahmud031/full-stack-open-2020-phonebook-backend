@@ -1,7 +1,9 @@
 const express = require('express')
 const morgan = require('morgan')
+const cors = require('cors')
 const app = express()
 app.use(express.json())
+app.use(cors())
 
 // for ex3.8 new morgan token
 morgan.token('Post-message', (req,res) => {
@@ -111,8 +113,8 @@ app.post('/api/persons', (req, res) => {
     }
 })
 
-const port = 3001
+const PORT = proxess.env.PORT || 3001
 
-app.listen(port, () => {
-    console.log(`Starting phonebook from port ${port}`)
+app.listen(PORT, () => {
+    console.log(`Starting phonebook from port ${PORT}`)
 })
