@@ -1,21 +1,29 @@
 const express = require('express')
-const morgan = require('morgan')
-const cors = require('cors')
 const app = express()
-app.use(express.json())
+const bodyParser = require('body-parser')
+require('dotenv').config()
+const Person = require('./models/person')
+
+const cors = require('cors')
+
 app.use(cors())
+
+app.use(bodyParser.json())
+
 app.use(express.static('build'))
 
+
 // for ex3.8 new morgan token
-morgan.token('Post-message', (req,res) => {
+//const morgan = require('morgan')
+/*morgan.token('Post-message', (req,res) => {
     console.log(req.body)
     return (JSON.stringify(req.body))
-})
+})*/
 
 //app.use(morgan('tiny'))
-app.use(morgan(':method :url :status :res[content-length] - :response-time ms :Post-message'))
+//app.use(morgan(':method :url :status :res[content-length] - :response-time ms :Post-message'))
 
-let persons = [
+/*let persons = [
     {
         name: "Mary Poppendieck",
         number: "39-23-6423122",
@@ -36,7 +44,7 @@ let persons = [
         number: "040-123456",
         id: 4
     }
-]
+]*/
 
 // front page
 app.get('/', (req,res) => {
@@ -45,12 +53,14 @@ app.get('/', (req,res) => {
 
 // get all persons
 app.get('/api/persons', (req, res) => {
-    res.json(persons)
+    Person.find({}).then(persons => {
+        res.json(persons.map(person => person.toJSON()));
+    })
 })
 
 // info page
 app.get('/info', (req,res) => {
-    const length = persons.length
+    const length = Person.length
     const date = new Date()
     res.send(`<p>Phonebook has info for ${length} persons</p>
                 <p>${date}</p>`)
@@ -59,7 +69,7 @@ app.get('/info', (req,res) => {
 // get a person by id
 app.get('/api/persons/:id', (req, res) => {
     const id = Number(req.params.id)
-    const person = persons.find(person => person.id === id)
+    const person = Person.find(person => person.id === id)
 
     if (person)
         res.json(person)
@@ -96,22 +106,22 @@ app.post('/api/persons', (req, res) => {
         })
     }
     // find duplicate name
-    const person = persons.find(person => person.name === body.name)
+    /*const person = Person.find(person => person.name === body.name)
     
     if(person) {
         res.status(400).json({
             error: 'Person already added' 
         })
     }
-    else {
-        const newPerson = {
+    else {*/
+        const newPerson = new Person({
             name: body.name,
             number: body.number,
-            id: generateID()
-        }
-        persons = persons.concat(newPerson)
-        res.json(persons)
-    }
+        })
+        newPerson.save().then(savedPerson => {
+            res.json(savedPerson)
+        })
+    //}
 })
 
 const PORT = process.env.PORT || 3001
