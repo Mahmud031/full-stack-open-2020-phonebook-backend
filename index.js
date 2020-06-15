@@ -54,7 +54,7 @@ app.get('/', (req,res) => {
 // get all persons
 app.get('/api/persons', (req, res) => {
     Person.find({}).then(persons => {
-        res.json(persons.map(person => person.toJSON()));
+        res.json(persons.map(person => person.toJSON()))
     })
 })
 
@@ -67,28 +67,41 @@ app.get('/info', (req,res) => {
 })
 
 // get a person by id
-app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = Person.find(person => person.id === id)
-
-    if (person)
-        res.json(person)
-    else
-        res.status(404).end()
+app.get('/api/persons/:id', (req, res, next) => {
+    Person.findById(req.params.id)
+        .then(person => {
+            res.json(person.toJSON())
+        })
+        .catch(error => next(error))
 })
 
 // delete by id
-app.delete('/api/persons/:id', (req,res) => {
-    const id = Number(req.params.id)
-    persons = persons.filter(person => person.id !== id)
-
-    res.status(204).end()
+app.delete('/api/persons/:id', (req, res, next) => {
+    //const id = Number(req.params.id)
+    Person.findByIdAndRemove(req.params.id)
+        .then (result => {
+            res.status(204).end()
+        })
+        .catch(error => next(error))
 })
+/* Person is mongoose model. See mongoose documentaion for the methods */
 
 // generate id
 const generateID = () => {
     return(Math.floor(Math.random()*1000000))
 }
+
+app.put('/api/persons/:id', (req, res, next) => {
+
+    const body = req.body
+    const person = {
+        name: body.name,
+        number: body.number,
+    }
+    Person.findByIdAndUpdate(req.params.id, person, {new: true})
+        .then(updatedPerson => res.json(updatedPerson))
+        .catch(error => next(error))
+})
 
 // add person in the phonebook
 app.post('/api/persons', (req, res) => {
@@ -123,6 +136,20 @@ app.post('/api/persons', (req, res) => {
         })
     //}
 })
+
+
+
+const errorHandler = (error, req, res, next) => {
+    console.error(error.message)
+
+    if (error.name === "CastError") {
+        return res.status(400).send({error: "malformatted ID"})
+    }
+    
+    next(error)
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 
